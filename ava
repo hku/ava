@@ -4,11 +4,10 @@ function print_usage(){
   echo "ava 1 # 0, 1, 2, 3"
   echo "ava push"
   echo "ava own"
-  echo "ava start tomcat"
-  echo "ava stop tomcat"
-  echo "ava port 8080"
-  echo "ava ps java"
-  echo "ava help scp|info"
+  echo "ava start"
+  echo "ava stop"
+  echo "ava show"
+  echo "ava memo"
 }
 
 function ssh_server(){
@@ -23,6 +22,7 @@ function ssh_server(){
   fi
 }
 
+############################################
 
 TOMCAT_HOME="/usr/local/tomcat/apache-tomcat-7.0.85"
 if [[ -z $HADOOP_HOME ]]; then
@@ -34,6 +34,11 @@ function start_service(){
     $TOMCAT_HOME/bin/startup.sh
   elif [[ $1 == "hadoop" ]]; then
     $HADOOP_HOME/sbin/start-dfs.sh
+  else
+    echo "examples:"
+    echo "ava start tomcat"
+    echo "ava start hadoop"
+    exit
   fi
 
   echo "show port in 2s..."
@@ -48,8 +53,73 @@ function start_service(){
 function stop_service(){
   if [[ $1 == "tomcat" ]]; then
     $TOMCAT_HOME/bin/shutdown.sh
+  elif [[ $1 == "hadoop" ]]; then
+    $HADOOP_HOME/sbin/stop-dfs.sh
+  else
+    echo "examples:"
+    echo "ava stop tomcat"
+    echo "ava stop hadoop" 
+    exit   
   fi
 }
+############################################
+
+function show_info(){
+  case $1 in
+    port)
+      if [[ -z $2 ]]; then
+        sudo netstat -tulpn | less
+      else
+        echo -e "Proto\tRecv-Q\tSend-Q\tLocal Address\t\tForeign Address\t\tState\tPID/Program name"
+        sudo netstat -tulpn | grep $2
+
+        echo -e "\nUSER\tPID\t%CPU\t%MEM\tVSZ\tRSS\tTTY\tSTA\tSTART\tTIME\tCOMMAND"
+        for pid in `sudo netstat -tulpn | grep $2 | awk '{print $6}' | awk -F "/" '{print $1}'`
+          do
+            ps aux| grep $pid
+          done
+      fi
+      ;;
+    app)
+      if [[ -z $2 ]]; then
+        ps aux | less
+      else
+        echo -e "USER\tPID\t%CPU\t%MEM\tVSZ\tRSS\tTTY\tSTA\tSTART\tTIME\tCOMMAND"
+        ps aux | grep $2
+
+        echo -e "\nProto\tRecv-Q\tSend-Q\tLocal Address\t\tForeign Address\t\tState\tPID/Program name"
+        for pid in `ps aux | grep $2 | awk '{print $2}'`
+          do
+            echo $pid
+          done
+      fi
+      ;;
+    size)
+      if [[ -z $2 ]]; then
+        df -h
+      elif [[ -d $2 ]]; then
+        du -hs $2
+      elif [[ -f $2 ]]; then 
+        ls -lh $2 | awk '{print $5}'
+      fi
+      ;;
+    cpu|mem)
+      cat /proc/cpuinfo
+      cat /proc/meminfo
+      ;;     
+    *)
+      echo "examples:"
+      echo "ava show port 8080"
+      echo "ava show app java"
+      echo "ava show size file_or_folder"
+      echo "ava show cpu/mem"
+  esac
+}
+
+############################################
+############################################
+############################################
+
 
 if [[ $# == 0 ]]; then
   print_usage
@@ -84,36 +154,18 @@ case $COMMAND in
     echo "sudo chown -R $USER:$USER $PWD"
     exit
     ;;
-  port)
+  show)
     if [[ $# == 1 ]]; then
-      sudo netstat -tulpn | less
+      show_info -h
     else
-      sudo netstat -tulpn | egrep "Local Address|"$2
-	  fi
-    exit
-    ;;
-  ps)
-    if [[ $# == 1 ]]; then
-      ps aux | less
-    else
-      ps aux| egrep "PID|"$2
+      show_info "${@:2}"
     fi
     exit
-    ;;   
-  help|-h)
-    if [[ $2 == "scp" ]]; then
-      echo "scp -P 2220 ~/.ssh/id_rsa.pub ray@192.168.74.251:~/moon.pub"
-    elif [[ $2 == "info" ]]; then
-      echo "cat /proc/cpuinfo"
-      echo "cat /proc/meminfo"
-      echo "watch -n 1 top"
-      echo "df -h"
-      echo "ls -lh"
-      echo "du -hs /path/to/directory"
-      echo "jps"
-    else
-      print_usage
-    fi
+    ;;  
+  memo)
+    echo "scp -P 2220 ~/.ssh/id_rsa.pub ray@192.168.74.251:~/moon.pub"
+    echo "watch -n 1 top"
+    echo "jps"
     exit
     ;;
 esac
