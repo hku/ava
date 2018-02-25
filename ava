@@ -71,12 +71,12 @@ function show_info(){
         sudo netstat -tulpn | less
       else
         echo -e "Proto\tRecv-Q\tSend-Q\tLocal Address\t\tForeign Address\t\tState\tPID/Program name"
-        sudo netstat -tulpn | grep $2
+        sudo netstat -tulpn | grep "LISTEN" | grep $2
 
         echo -e "\nUSER\tPID\t%CPU\t%MEM\tVSZ\tRSS\tTTY\tSTA\tSTART\tTIME\tCOMMAND"
-        for pid in `sudo netstat -tulpn | grep $2 | awk '{print $6}' | awk -F "/" '{print $1}'`
+        for pid in `sudo netstat -tulpn | grep "LISTEN" | grep $2 | awk '{print $7}' | awk -F "/" '{print $1}'`
           do
-            ps aux| grep $pid
+            ps aux| grep $pid | grep -v "grep $pid"
           done
       fi
       ;;
@@ -85,12 +85,12 @@ function show_info(){
         ps aux | less
       else
         echo -e "USER\tPID\t%CPU\t%MEM\tVSZ\tRSS\tTTY\tSTA\tSTART\tTIME\tCOMMAND"
-        ps aux | grep $2
+        ps aux | grep $2 | grep -v "grep $2" | grep -v "show app $2"
 
         echo -e "\nProto\tRecv-Q\tSend-Q\tLocal Address\t\tForeign Address\t\tState\tPID/Program name"
         for pid in `ps aux | grep $2 | awk '{print $2}'`
           do
-            echo $pid
+            sudo netstat -tulpn | grep $pid
           done
       fi
       ;;
