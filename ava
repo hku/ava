@@ -1,4 +1,5 @@
 #!/bin/bash
+# this is ava!
 
 function print_usage(){
   echo "ava 1 # 0, 1, 2, 3"
