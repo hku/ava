@@ -164,6 +164,7 @@ case $COMMAND in
     exit
     ;;  
   memo)
+    echo "git remote set-url origin git@github.com:hku/ava.git"
     echo "scp -P 2220 ~/.ssh/id_rsa.pub ray@192.168.74.251:~/moon.pub"
     echo "watch -n 1 top"
     echo "jps"
