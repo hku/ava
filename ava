@@ -104,16 +104,18 @@ function show_info(){
         ls -lh $2 | awk '{print $5}'
       fi
       ;;
-    cpu|mem)
-      cat /proc/cpuinfo
-      cat /proc/meminfo
+    cpu|mem|os)
+      echo "number of cpus: "`cat /proc/cpuinfo | grep "model name" | wc -l`
+      cat /proc/cpuinfo | grep "model name"
+      cat /proc/meminfo | head -3
+      cat /etc/lsb-release
       ;;     
     *)
       echo "examples:"
       echo "ava show port 8080"
       echo "ava show app java"
       echo "ava show size file_or_folder"
-      echo "ava show cpu/mem"
+      echo "ava show cpu/mem/os"
   esac
 }
 
