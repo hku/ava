@@ -3,6 +3,8 @@
 
 function print_usage(){
   echo "ava 1 # 0, 1, 2, 3"
+  echo "ava 1 ls"
+  echo "ava scp"
   echo "ava push"
   echo "ava own"
   echo "ava start"
@@ -12,14 +14,83 @@ function print_usage(){
 }
 
 function ssh_server(){
-  if [[ $1 == "0" ]]; then
-  	ssh ray@123.57.54.83
-  elif [[ $1 == "1" ]]; then
-    ssh -p 2220 ray@192.168.74.251
+
+  if [[ $1 == "1" ]]; then
+    port=2220
+    host="ray@192.168.74.251"
   elif [[ $1 == "2" ]]; then
-  	ssh -p 2221 ray@192.168.74.251
+    port=2221
+    host="ray@192.168.74.251"  
   elif [[ $1 == "3" ]]; then
-    ssh -p 2222 ray@192.168.74.251
+    port=2222
+    host="ray@192.168.74.251"
+  fi
+
+  ssh -p $port $host ${@:2}
+}
+
+
+function scp_server(){
+  if [[ $# == 0 ]]; then
+  	echo "scp from or to servers, examples:" 
+  	echo "ava scp 1/home/ray/abc.txt ~/"
+  	echo "ava scp 1/home/ray/folder ~/"
+  	exit 0
+  elif [[ $# == 1 ]]; then
+  	scp_server $1 ./
+  fi
+
+  if [[ ${1:0:2} =~ (1|2|3)(\~|\/) ]]; then
+  	server_flag=${1:0:1}
+  	server_path=${1:1}
+  	local_path=$2
+  	from=0 #from server to local
+  elif [[ ${2:0:2} =~ (1|2|3)(\~|\/) ]]; then
+  	server_flag=${2:0:1}
+  	server_path=${2:1}
+  	local_path=$1
+  	from=1 #from local to server
+  else
+  	echo "wrong scp params, try: ava scp 1/path/to/file ./"
+  	exit 1
+  fi
+
+  if [[ $server_flag == "1" ]]; then
+    port=2220
+    host="ray@192.168.74.251"
+  elif [[ $server_flag == "2" ]]; then
+    port=2221
+    host="ray@192.168.74.251"  
+  elif [[ $server_flag == "3" ]]; then
+    port=2222
+    host="ray@192.168.74.251"
+  fi
+
+
+  if [[ $from == 0 ]]; then
+    if ssh -p $port $host "[[ -f $server_path ]]"; then
+      folder_flag=""
+    elif ssh -p $port $host "[[ -d $server_path ]]"; then
+      folder_flag="-r"
+    else
+      echo "server path not exits or ssh fail"
+      exit 1
+    fi
+  else
+  	if [[ -f $local_path ]]; then
+      folder_flag=""
+    elif [[ -d $local_path ]]; then
+      folder_flag="-r"
+    else
+      echo "local path not exits"
+      exit 1
+    fi
+  fi
+
+  if [[ $from == 0 ]]; then
+    scp -P $port $folder_flag $host":"$server_path $local_path
+  else
+    scp -P $port $folder_flag $local_path $host":"$server_path
   fi
 }
 
@@ -104,7 +175,7 @@ function show_info(){
         ls -lh $2 | awk '{print $5}'
       fi
       ;;
-    cpu|mem|os)
+    cpu|mem|os|status)
       echo "number of cpus: "`cat /proc/cpuinfo | grep "model name" | wc -l`
       cat /proc/cpuinfo | grep "model name"
       cat /proc/meminfo | head -3
@@ -115,7 +186,7 @@ function show_info(){
       echo "ava show port 8080"
       echo "ava show app java"
       echo "ava show size file_or_folder"
-      echo "ava show cpu/mem/os"
+      echo "ava show status"
   esac
 }
 
@@ -133,9 +204,12 @@ COMMAND=$1
 
 case $COMMAND in
   0|1|2|3)
-    ssh_server $1
+    ssh_server $@
     exit
     ;;
+  scp)
+	scp_server ${@:2}
+	;;	
   start)
     start_service $2
     exit
@@ -152,6 +226,7 @@ case $COMMAND in
     echo "git pull-add-commit-push"
     exit
     ;;
+
   own)
     sudo chown -R $USER:$USER $PWD
     echo "sudo chown -R $USER:$USER $PWD"
@@ -167,7 +242,7 @@ case $COMMAND in
     ;;  
   memo)
     echo "git remote set-url origin git@github.com:hku/ava.git"
-    echo "scp -P 2220 ~/.ssh/id_rsa.pub ray@192.168.74.251:~/moon.pub"
+    echo "sudo dpkg -i xxx.deb"
     echo "watch -n 1 top"
     echo "jps"
     exit
