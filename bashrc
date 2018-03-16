@@ -18,6 +18,6 @@ export SPARK_HOME=/usr/local/spark/spark-2.2.1-bin-hadoop2.7
 
 export PATH=${JAVA_HOME}/bin:${MAVEN_HOME}/bin:${SPRING_HOME}/bin:${HADOOP_HOME}/bin:${SPARK_HOME}/bin:$PATH
 
-
+export PATH="$(ruby -rubygems -e 'puts Gem.user_dir')/bin:$PATH"
 
 alias cdd="cd /media/$USER/Data/moon"

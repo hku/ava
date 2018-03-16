@@ -140,6 +140,36 @@ function stop_service(){
     exit   
   fi
 }
+
+function watch_file() {
+  chsum1=""
+  if [[ $# < 2 ]]; then
+    echo "examples:"
+    echo "ava watch /path/to/watched mvn compile"
+    exit
+  fi
+
+  watched_path=$1
+
+  if [[ -f $watched_path || -d $watched_path ]]; then
+    echo "watching $watched_path"
+  else
+    echo "$watched_path not exist!"
+    exit 1
+  fi
+
+
+  while [[ true ]]
+  do
+      chsum2=`find $watched_path -type f -exec md5sum {} \;`
+      if [[ $chsum1 != $chsum2 ]] ; then           
+          ${@:2}
+          chsum1=$chsum2
+      fi
+      sleep 1
+  done    
+}
+
 ############################################
 
 function show_info(){
@@ -237,6 +267,9 @@ case $COMMAND in
     sudo chown -R $USER:$USER $PWD
     echo "sudo chown -R $USER:$USER $PWD"
     exit
+    ;;
+  watch) 
+    watch_file ${@:2}
     ;;
   show)
     if [[ $# == 1 ]]; then
