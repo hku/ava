@@ -255,6 +255,7 @@ case $COMMAND in
     exit
     ;;
   push)
+    git remote -v
     git pull
     git add -A
     git commit -m "commit"
